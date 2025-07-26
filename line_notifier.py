@@ -2,48 +2,29 @@ import os
 import requests
 from typing import Optional
 from dotenv import load_dotenv
+from linebot import LineBotApi
+from linebot.models import TextSendMessage
 
+"""
+see : Line bot api documentation
+https://github.com/line/line-bot-sdk-python/blob/master/linebot/v3/messaging/docs/MessagingApi.md
+"""
 
 class LineNotifier:
-    """LINE Notify APIを使用した通知機能"""
+    """LINE APIを使用した通知機能"""
     
     def __init__(self):
         # 環境変数を読み込み
         load_dotenv()
-        self.token = os.getenv('LINE_NOTIFY_TOKEN')
-        self.api_url = 'https://notify-api.line.me/api/notify'
-        
-        if not self.token or self.token == 'your_line_notify_token_here':
-            print("警告: LINE_NOTIFY_TOKENが設定されていません。.envファイルを確認してください。")
+        self.token = os.getenv('LINE_MESSAGING_API_TOKEN')
+        self.user_id = os.getenv('LINE_USER_ID')
+        self.line_bot_api = LineBotApi(self.token)
     
     def send_message(self, message: str) -> bool:
-        """LINE Notifyでメッセージを送信"""
-        if not self.token or self.token == 'your_line_notify_token_here':
-            print(f"[LINE通知（テスト）] {message}")
-            return False
-        
-        headers = {
-            'Authorization': f'Bearer {self.token}',
-            'Content-Type': 'application/x-www-form-urlencoded'
-        }
-        
-        data = {
-            'message': message
-        }
-        
-        try:
-            response = requests.post(self.api_url, headers=headers, data=data)
-            
-            if response.status_code == 200:
-                print("LINE通知送信成功")
-                return True
-            else:
-                print(f"LINE通知送信失敗: {response.status_code} - {response.text}")
-                return False
-                
-        except Exception as e:
-            print(f"LINE通知エラー: {e}")
-            return False
+        """LINE Messaging APIでメッセージを送信"""               
+        self.line_bot_api.push_message(
+            to=self.user_id,
+            messages=TextSendMessage(text=message))
     
     def send_portfolio_summary(self, jp_data: dict, us_data: dict = None, exchange_rate: float = None) -> bool:
         """ポートフォリオサマリーをLINEで送信"""
@@ -106,7 +87,7 @@ class LineNotifier:
         return self.send_message(message)
     
     def test_connection(self) -> bool:
-        """LINE Notify接続テスト"""
+        """LINE Messaging API接続テスト"""
         test_message = "🔔 SmartKabuka接続テスト"
         return self.send_message(test_message)
 
@@ -115,18 +96,18 @@ def main():
     """テスト用のメイン関数"""
     notifier = LineNotifier()
     
-    print("=== LINE Notify接続テスト ===")
+    print("=== LINE Messaging API接続テスト ===")
     success = notifier.test_connection()
     
     if success:
         print("✅ LINE通知が正常に送信されました")
     else:
         print("❌ LINE通知の送信に失敗しました")
-        print("💡 .envファイルのLINE_NOTIFY_TOKENを確認してください")
-        print("💡 LINE Notifyトークンの取得方法:")
-        print("   1. https://notify-bot.line.me/ にアクセス")
-        print("   2. 「ログイン」→「マイページ」→「トークンを発行する」")
-        print("   3. 通知を送りたいトークルームを選択してトークン発行")
+        print("💡 .envファイルのLINE_MESSAGING_API_TOKENを確認してください")
+        print("💡 LINE Messaging APIトークンの取得方法:")
+        print("   1. https://developers.line.biz/ja/ にアクセス")
+        print("   2. 「ログイン」→「コンソール」にアクセスする")
+        print("   3. 通知を送りたい「チャネル」→「MessagingAPI設定」→「トークンを発行」")
 
 
 if __name__ == "__main__":
