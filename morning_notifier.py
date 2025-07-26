@@ -209,15 +209,20 @@ class MorningNotifier:
         return success
     
     def schedule_check(self) -> bool:
-        """実行時刻チェック（朝8-9時の間のみ実行）"""
+        """実行時刻チェック（GitHub Actionsの場合は常にTrue）"""
+        # GitHub Actionsで実行される場合は時間チェックをスキップ
+        if os.getenv('GITHUB_ACTIONS'):
+            print("🤖 GitHub Actions環境で実行中 - 時間チェックをスキップ")
+            return True
+        
         now = datetime.now()
         current_hour = now.hour
         
-        # 朝8時から9時の間のみ実行
-        if 8 <= current_hour < 9:
+        # 朝6時から9時の間のみ実行
+        if 6 <= current_hour < 9:
             return True
         else:
-            print(f"⏰ 現在時刻 {now.strftime('%H:%M')} - 朝の通知時間外です (8:00-9:00)")
+            print(f"⏰ 現在時刻 {now.strftime('%H:%M')} - 朝の通知時間外です (6:00-9:00)")
             return False
 
 
@@ -229,9 +234,9 @@ def main():
     print("🔔 SmartKabuka 朝のポートフォリオ通知システム")
     print("=" * 50)
     
-    # 時刻チェック（テスト時はコメントアウト）
-    # if not notifier.schedule_check():
-    #     return
+    # 時刻チェック
+    if not notifier.schedule_check():
+        return
     
     # レポート送信
     success = notifier.send_morning_report()
