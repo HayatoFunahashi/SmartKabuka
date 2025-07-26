@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
-from stock_data import StockData
-from us_stock_data import USStockData
+from libs.jp_stock_data import JPStockData
+from libs.us_stock_data import USStockData
 from stock_price_fetcher import StockPriceFetcher
 from line_notifier import LineNotifier
 import yfinance as yf
@@ -27,7 +27,7 @@ class MorningNotifier:
         # 日本株データ
         if os.path.exists(jp_csv_path):
             try:
-                self.jp_stock_data = StockData(jp_csv_path)
+                self.jp_stock_data = JPStockData(jp_csv_path)
                 print(f"✅ 日本株データを読み込みました: {len(self.jp_stock_data.get_stock_codes())}銘柄")
             except Exception as e:
                 print(f"❌ 日本株データの読み込みエラー: {e}")

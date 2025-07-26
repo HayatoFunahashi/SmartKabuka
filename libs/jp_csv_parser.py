@@ -2,7 +2,7 @@ import pandas as pd
 from typing import Dict, List
 
 
-class SBICSVParser:
+class JPCSVParser:
     """SBI証券の保有株情報CSVを解析するクラス"""
     
     def __init__(self, csv_path: str):
@@ -212,7 +212,7 @@ class SBICSVParser:
 
 def main():
     """テスト用のメイン関数"""
-    parser = SBICSVParser('input/data.csv')
+    parser = JPCSVParser('input/data.csv')
     
     # 全セクションを解析
     sections = parser.parse_csv()

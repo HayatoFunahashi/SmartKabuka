@@ -1,13 +1,13 @@
 import re
 from typing import Dict, List, Tuple
-from csv_parser import SBICSVParser
+from libs.jp_csv_parser import JPCSVParser
 
 
-class StockData:
+class JPStockData:
     """株式データを管理するクラス"""
     
     def __init__(self, csv_path: str):
-        self.parser = SBICSVParser(csv_path)
+        self.parser = JPCSVParser(csv_path)
         self.stock_df = None
         self.fund_df = None
         self._load_data()
@@ -95,7 +95,7 @@ class StockData:
 
 def main():
     """テスト用のメイン関数"""
-    stock_data = StockData('input/data.csv')
+    stock_data = JPStockData('input/data.csv')
     
     print("=== 保有銘柄コード ===")
     codes = stock_data.get_stock_codes()

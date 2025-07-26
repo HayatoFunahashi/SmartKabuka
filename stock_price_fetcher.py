@@ -163,10 +163,11 @@ class StockPriceFetcher:
 
 def main():
     """テスト用のメイン関数"""
-    from stock_data import StockData
+    from libs.jp_stock_data import JPStockData
+    from libs.us_stock_data import USStockData
     
     # 保有銘柄を取得
-    stock_data = StockData('input/data.csv')
+    stock_data = JPStockData('input/data.csv')
     codes = stock_data.get_stock_codes()
     
     print(f"=== 保有銘柄の株価取得テスト ===")

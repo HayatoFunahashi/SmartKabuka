@@ -1,5 +1,5 @@
 from typing import Dict, List
-from us_csv_parser import USCSVParser
+from libs.us_csv_parser import USCSVParser
 
 
 class USStockData:
