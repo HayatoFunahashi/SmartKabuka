@@ -118,6 +118,64 @@ class MorningNotifier:
             'stocks': stocks
         }
     
+    def create_portfolio_message(self, jp_data: dict, us_data: dict = None, exchange_rate: float = None) -> str:
+        """ポートフォリオレポートメッセージを作成"""
+        message_lines = ["📊 朝のポートフォリオレポート"]
+        message_lines.append("=" * 30)
+        
+        # 日本株情報
+        if jp_data:
+            message_lines.append("🇯🇵 日本株")
+            message_lines.append(f"銘柄数: {jp_data.get('count', 0)}銘柄")
+            
+            for stock in jp_data.get('stocks', []):
+                code = stock.get('code', '')
+                name = stock.get('name', '')
+                current_price = stock.get('current_price', 0)
+                change = stock.get('price_change', 0)
+                change_pct = stock.get('price_change_pct', 0)
+                
+                # 変動の矢印表示
+                arrow = "📈" if change > 0 else "📉" if change < 0 else "➡️"
+                
+                message_lines.append(f"{arrow} {code} {name}")
+                message_lines.append(f"   {current_price:.0f}円 ({change:+.0f}円 {change_pct:+.2f}%)")
+            
+            message_lines.append("")
+        
+        # 米国株情報
+        if us_data:
+            message_lines.append("🇺🇸 米国株")
+            message_lines.append(f"銘柄数: {us_data.get('count', 0)}銘柄")
+            
+            if exchange_rate:
+                message_lines.append(f"USD/JPY: {exchange_rate:.2f}")
+            
+            for stock in us_data.get('stocks', []):
+                symbol = stock.get('symbol', '')
+                current_price = stock.get('current_price', 0)
+                change = stock.get('price_change', 0)
+                change_pct = stock.get('price_change_pct', 0)
+                
+                # 変動の矢印表示
+                arrow = "📈" if change > 0 else "📉" if change < 0 else "➡️"
+                
+                message_lines.append(f"{arrow} {symbol}")
+                message_lines.append(f"   ${current_price:.2f} (${change:+.2f} {change_pct:+.2f}%)")
+                
+                # 円換算表示（為替レートがある場合）
+                if exchange_rate:
+                    jpy_price = current_price * exchange_rate
+                    message_lines.append(f"   ≈{jpy_price:.0f}円")
+            
+            message_lines.append("")
+        
+        # 送信時刻
+        now = datetime.now().strftime("%Y/%m/%d %H:%M")
+        message_lines.append(f"⏰ {now} 更新")
+        
+        return "\n".join(message_lines)
+    
     def send_morning_report(self) -> bool:
         """朝のレポートを送信"""
         print("🌅 朝のポートフォリオレポートを作成中...")
@@ -132,13 +190,16 @@ class MorningNotifier:
             print("❌ 送信するポートフォリオデータがありません")
             return False
         
-        # LINE通知送信
-        print("📱 LINE通知を送信中...")
-        success = self.line_notifier.send_portfolio_summary(
+        # メッセージ作成
+        message = self.create_portfolio_message(
             jp_data=jp_data if jp_data else None,
             us_data=us_data if us_data else None,
             exchange_rate=exchange_rate
         )
+        
+        # LINE通知送信
+        print("📱 LINE通知を送信中...")
+        success = self.line_notifier.send_message(message)
         
         if success:
             print("✅ 朝のレポートを送信しました")
@@ -180,7 +241,8 @@ def main():
     else:
         print("\n💥 レポート送信に問題が発生しました")
         print("📋 チェック項目:")
-        print("  - .envファイルのLINE_NOTIFY_TOKEN設定")
+        print("  - .envファイルのLINE_MESSAGING_API_TOKEN設定")
+        print("  - .envファイルのLINE_USER_ID設定")
         print("  - input/data.csv（日本株）の存在")
         print("  - input/us_data.csv（米国株）の存在")
         print("  - インターネット接続")

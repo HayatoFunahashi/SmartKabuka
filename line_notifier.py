@@ -1,9 +1,8 @@
 import os
-import requests
-from typing import Optional
 from dotenv import load_dotenv
 from linebot import LineBotApi
 from linebot.models import TextSendMessage
+from linebot.exceptions import LineBotApiError
 
 """
 see : Line bot api documentation
@@ -18,73 +17,33 @@ class LineNotifier:
         load_dotenv()
         self.token = os.getenv('LINE_MESSAGING_API_TOKEN')
         self.user_id = os.getenv('LINE_USER_ID')
-        self.line_bot_api = LineBotApi(self.token)
+        
+        if not self.token or not self.user_id:
+            print("警告: LINE_MESSAGING_API_TOKENまたはLINE_USER_IDが設定されていません。")
+            self.line_bot_api = None
+        else:
+            self.line_bot_api = LineBotApi(self.token)
     
     def send_message(self, message: str) -> bool:
-        """LINE Messaging APIでメッセージを送信"""               
-        self.line_bot_api.push_message(
-            to=self.user_id,
-            messages=TextSendMessage(text=message))
-    
-    def send_portfolio_summary(self, jp_data: dict, us_data: dict = None, exchange_rate: float = None) -> bool:
-        """ポートフォリオサマリーをLINEで送信"""
-        message_lines = ["📊 朝のポートフォリオレポート"]
-        message_lines.append("=" * 30)
+        """LINE Messaging APIでメッセージを送信"""
+        if not self.line_bot_api:
+            print(f"[LINE通知（テスト）] {message}")
+            return False
         
-        # 日本株情報
-        if jp_data:
-            message_lines.append("🇯🇵 日本株")
-            message_lines.append(f"銘柄数: {jp_data.get('count', 0)}銘柄")
+        try:
+            self.line_bot_api.push_message(
+                to=self.user_id,
+                messages=TextSendMessage(text=message)
+            )
+            print("LINE通知送信成功")
+            return True
             
-            for stock in jp_data.get('stocks', []):
-                code = stock.get('code', '')
-                name = stock.get('name', '')
-                current_price = stock.get('current_price', 0)
-                change = stock.get('price_change', 0)
-                change_pct = stock.get('price_change_pct', 0)
-                
-                # 変動の矢印表示
-                arrow = "📈" if change > 0 else "📉" if change < 0 else "➡️"
-                
-                message_lines.append(f"{arrow} {code} {name}")
-                message_lines.append(f"   {current_price:.0f}円 ({change:+.0f}円 {change_pct:+.2f}%)")
-            
-            message_lines.append("")
-        
-        # 米国株情報
-        if us_data:
-            message_lines.append("🇺🇸 米国株")
-            message_lines.append(f"銘柄数: {us_data.get('count', 0)}銘柄")
-            
-            if exchange_rate:
-                message_lines.append(f"USD/JPY: {exchange_rate:.2f}")
-            
-            for stock in us_data.get('stocks', []):
-                symbol = stock.get('symbol', '')
-                current_price = stock.get('current_price', 0)
-                change = stock.get('price_change', 0)
-                change_pct = stock.get('price_change_pct', 0)
-                
-                # 変動の矢印表示
-                arrow = "📈" if change > 0 else "📉" if change < 0 else "➡️"
-                
-                message_lines.append(f"{arrow} {symbol}")
-                message_lines.append(f"   ${current_price:.2f} (${change:+.2f} {change_pct:+.2f}%)")
-                
-                # 円換算表示（為替レートがある場合）
-                if exchange_rate:
-                    jpy_price = current_price * exchange_rate
-                    message_lines.append(f"   ≈{jpy_price:.0f}円")
-            
-            message_lines.append("")
-        
-        # 送信時刻
-        from datetime import datetime
-        now = datetime.now().strftime("%Y/%m/%d %H:%M")
-        message_lines.append(f"⏰ {now} 更新")
-        
-        message = "\n".join(message_lines)
-        return self.send_message(message)
+        except LineBotApiError as e:
+            print(f"LINE API エラー: {e.status_code} - {e.error.message}")
+            return False
+        except Exception as e:
+            print(f"LINE通知送信エラー: {e}")
+            return False
     
     def test_connection(self) -> bool:
         """LINE Messaging API接続テスト"""
