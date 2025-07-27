@@ -1,33 +1,57 @@
-# 概要
+# SmartKabuka - AI-Powered Portfolio Notification System
 
-保有株情報を活用してAIを組み込んだアラート通知アプリを作成する．
+SBI証券の保有株情報を活用して、株価情報とLINE通知を組み合わせた朝のポートフォリオレポートシステムです。
 
-## 前提条件
+## 🚀 現在の実装状況
 
-- 株価情報にはSBI証券の保有株情報のCSVファイルを利用すること．
- - TODO：取得方法を記載　現状はWebから手動でダウンロードしたインプットファイルを利用
- - このためcsv内の現在値はcsvの保存日となっていることに注意
-- Pythonを利用する．
-- AIにはClaudeCodeを利用する．APIを利用できること．
-- APIキーや認証情報は.envに記載すること
+### ✅ 実装済み機能
+- **ポートフォリオデータ解析**: SBI証券CSV（日本株・米国株）の自動解析
+- **リアルタイム株価取得**: Yahoo Finance APIによる現在価格取得
+- **LINE通知**: 朝のポートフォリオレポート自動送信
+- **GitHub Actions**: 毎日朝6時（日本時間）の自動実行
+- **セキュア運用**: CSVデータをBase64エンコードしてGitHub Secretsで管理
 
-## アプリの構成
+### 🔄 今後の実装予定
+- ニュース収集・AI解析機能
+- テクニカル指標（移動平均乖離、RSI）による売買判定
+- アラート条件のカスタマイズ
 
-- 保有株情報を取得する機能
- - inputフォルダ内にあるjp_data.csv,us_data.csvを読み込みする
+## 📋 セットアップ
 
-- 株価・ニュースをリアルタイムで取得する機能
- - Yahoo Finance APIもしくは楽天証券APIを利用して株価情報を取得する
- - 株探、日経電子版、NewsPicks などからのRSSやスク
- レイピングで関連株のニュースを取得する
+### 1. 依存関係のインストール
+```bash
+pip install -r requirements.txt
+```
 
-- AIによる解析・アラート判定
- - AIモデルを利用してニュースの要約＋保有株との関連性分析を行う
- - テクニカル指標（移動平均乖離，RSIなど）から売買のアドバイスを自動生成する
+### 2. 環境変数の設定（.env）
+```env
+LINE_MESSAGING_API_TOKEN=your_line_messaging_api_token
+LINE_USER_ID=your_line_user_id
+```
 
-- 通知機能
- - 選択したどれか一つの手段にて通知できる機能
- - LINE，メール
+### 3. CSVデータの準備
+SBI証券から以下のファイルをダウンロードして`input/`フォルダに配置：
+- `jp_data.csv` (日本株データ)
+- `us_data.csv` (米国株データ)
+
+### 4. GitHub Actions用セットアップ（本番運用）
+```bash
+# GitHub CLI認証
+gh auth login
+
+# CSVデータをSecretsに登録
+python3 update_secrets.py
+```
+
+## 🏗️ アーキテクチャ
+
+### コアコンポーネント
+- `morning_notifier.py`: メイン実行ファイル・ポートフォリオレポート作成
+- `libs/jp_stock_data.py`: 日本株データ管理
+- `libs/us_stock_data.py`: 米国株データ管理
+- `stock_price_fetcher.py`: Yahoo Finance API連携
+- `line_notifier.py`: LINE Messaging API通知
+- `update_secrets.py`: GitHub Secrets管理ツール
 
 ## 入力csvのデータフォーマット
 

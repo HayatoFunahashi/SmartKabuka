@@ -4,67 +4,126 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Python-based AI-powered stock alert notification application that analyzes portfolio holdings from SBI Securities and provides intelligent alerts based on stock prices, news analysis, and technical indicators.
+SmartKabuka is a Python-based AI-powered portfolio notification system that analyzes holdings from SBI Securities and provides morning portfolio reports via LINE messaging. The system runs automatically on GitHub Actions and securely manages CSV data through GitHub Secrets.
 
 ## Development Environment
 
 - **Language**: Python 3
-- **Required Libraries**: pandas, requests, beautifulsoup4, yfinance, python-dotenv
-- **Environment Setup**: API keys and authentication info stored in `.env` file
-- **Input Data**: SBI Securities CSV files in `input/jp_data.csv` (SJIS encoded)
+- **Required Libraries**: pandas, yfinance, python-dotenv, line-bot-sdk, requests
+- **Environment Setup**: API keys stored in `.env` file (local) or GitHub Secrets (production)
+- **Input Data**: SBI Securities CSV files (`input/jp_data.csv`, `input/us_data.csv`) - SJIS encoded
+- **Deployment**: GitHub Actions for automated daily execution
 
-## Core Architecture
+## Current Architecture
 
-### Data Processing Pipeline
-1. **CSV Parser** (`csv_parser.py`): Handles complex SBI Securities CSV format with multiple sections (stocks, mutual funds) and SJIS encoding
-2. **Stock Data Manager** (`stock_data.py`): Provides high-level interface for portfolio data access and analysis
-3. **Stock Price API**: Yahoo Finance API integration (楽天証券API as alternative)
-4. **News Collection**: Web scraping from 株探, 日経電子版, NewsPicks
-5. **AI Analysis**: Claude API integration for news summarization and relevance analysis
-6. **Technical Indicators**: Moving average deviation, RSI calculations
-7. **Notifications**: LINE Notify or email alerts
+### Core Components
+1. **Morning Notifier** (`morning_notifier.py`): Main execution file, orchestrates portfolio report generation
+2. **Stock Data Managers**: 
+   - `libs/jp_stock_data.py`: Japanese stock portfolio analysis
+   - `libs/us_stock_data.py`: US stock portfolio analysis
+3. **CSV Parsers**:
+   - `libs/jp_csv_parser.py`: Handles SBI Securities Japanese stock CSV format
+   - `libs/us_csv_parser.py`: Handles SBI Securities US stock CSV format
+4. **Price Fetcher** (`stock_price_fetcher.py`): Yahoo Finance API integration for real-time prices
+5. **LINE Notifier** (`line_notifier.py`): LINE Messaging API integration
+6. **Secrets Manager** (`libs/update_secrets.py`): GitHub Secrets management for CSV data
 
-### Key Components
+### Data Flow
+1. CSV data (Base64 encoded) → GitHub Secrets
+2. GitHub Actions → Decode CSV → Load portfolio data
+3. Yahoo Finance API → Fetch current prices
+4. Generate portfolio report → Send via LINE
+5. Schedule: Daily at 6:00 AM Japan time
 
-- `SBICSVParser`: Parses multi-section CSV with irregular structure, handles合計行 and explanation rows
-- `StockData`: Extracts stock codes (4-digit), maps to company names, calculates portfolio summaries
-- Input CSV contains multiple sections like "株式（現物/NISA預り（成長投資枠））" with varying column structures
+## File Structure
+
+```
+SmartKabuka/
+├── morning_notifier.py           # Main application entry point
+├── line_notifier.py             # LINE messaging integration
+├── stock_price_fetcher.py       # Yahoo Finance API client
+├── libs/
+│   ├── jp_stock_data.py         # Japanese stock data management
+│   ├── jp_csv_parser.py         # Japanese stock CSV parser
+│   ├── us_stock_data.py         # US stock data management
+│   ├── us_csv_parser.py         # US stock CSV parser
+│   └── update_secrets.py        # GitHub Secrets management
+├── .github/workflows/
+│   └── morning-notification.yml # GitHub Actions workflow
+├── input/                       # Local CSV files (not committed)
+│   ├── jp_data.csv             # Japanese stocks (SJIS)
+│   └── us_data.csv             # US stocks (SJIS)
+└── requirements.txt            # Python dependencies
+```
 
 ## Common Commands
 
 ```bash
-# Test CSV parsing functionality
-python3 csv_parser.py
+# Run morning portfolio report
+python3 morning_notifier.py
 
-# Test stock data management
-python3 stock_data.py
+# Test Japanese stock data parsing
+python3 libs/jp_stock_data.py
 
-# Run main application (when implemented)
-python3 main.py
+# Test US stock data parsing  
+python3 libs/us_stock_data.py
+
+# Update GitHub Secrets with new CSV data
+python3 libs/update_secrets.py
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-## Data Format Notes
+## CSV Data Format
 
-The SBI Securities CSV input has these characteristics:
-- SJIS encoding (Shift_JIS)
-- Multiple sections with repeated headers
-- Mixed data types with comma separators in numbers
-- Summary rows and metadata that need filtering
-- Stock codes are 4-digit numbers embedded in "銘柄（コード）" field format: "XXXX 会社名"
+### Japanese Stocks (`jp_data.csv`)
+- **Encoding**: SJIS (Shift_JIS)
+- **Structure**: Multi-section format with headers like "株式（現物/NISA預り（成長投資枠））"
+- **Key Fields**: "銘柄（コード）" contains "4-digit-code Company Name" format
+- **Parsing**: Handles irregular sections, summary rows, and comma-separated numbers
 
-## API Integration Requirements
+### US Stocks (`us_data.csv`)
+- **Encoding**: SJIS (Shift_JIS)  
+- **Structure**: Similar multi-section format for US holdings
+- **Key Fields**: Stock symbols and USD prices
+- **Currency**: USD/JPY conversion for display
 
-- Claude API key for news analysis and portfolio correlation
-- Yahoo Finance API for real-time stock prices
-- Optional: 楽天証券API as alternative data source
-- LINE Notify token or SMTP credentials for notifications (user selectable)
+## API Integration
+
+### LINE Messaging API
+- **Token**: `LINE_MESSAGING_API_TOKEN` (GitHub Secret/env var)
+- **User ID**: `LINE_USER_ID` (GitHub Variable/env var)
+- **Usage**: Send formatted portfolio reports
+
+### Yahoo Finance API
+- **Library**: yfinance
+- **Markets**: Both Japanese (.T suffix) and US stocks
+- **Rate Limiting**: 0.3s delay between requests
+- **Fallback**: Error handling for failed API calls
+
+## Security & Deployment
+
+### GitHub Actions Workflow
+- **Schedule**: `0 21 * * *` (6:00 AM JST daily)
+- **Environment**: ubuntu-latest with Python 3.10
+- **Secrets**: CSV data stored as Base64-encoded GitHub Secrets
+- **Variables**: Non-sensitive config like LINE_USER_ID
+
+### Secret Management
+- `JP_DATA_CSV_BASE64`: Base64-encoded Japanese stock CSV
+- `US_DATA_CSV_BASE64`: Base64-encoded US stock CSV
+- `LINE_MESSAGING_API_TOKEN`: LINE API authentication
+- Use `libs/update_secrets.py` to update CSV secrets via GitHub CLI
 
 ## Current Implementation Status
 
-- ✅ CSV parsing for SBI Securities format
-- ✅ Stock data extraction and portfolio analysis
-- 🔄 Yahoo Finance API integration (in progress)
-- ⏳ News collection and web scraping
-- ⏳ Claude API integration for AI analysis
-- ⏳ Technical indicator calculations
-- ⏳ Notification system
+- ✅ CSV parsing for SBI Securities format (JP/US)
+- ✅ Stock data extraction and portfolio analysis  
+- ✅ Yahoo Finance API integration for real-time prices
+- ✅ LINE messaging notifications
+- ✅ GitHub Actions automation
+- ✅ Secure CSV data management via GitHub Secrets
+- ⏳ News collection and AI analysis (planned)
+- ⏳ Technical indicators (RSI, moving averages) (planned)
+- ⏳ Custom alert conditions (planned)
