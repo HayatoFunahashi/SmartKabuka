@@ -33,7 +33,7 @@ jobs:
         
         # Create .env file
         echo "LINE_MESSAGING_API_TOKEN=${{ secrets.LINE_MESSAGING_API_TOKEN }}" >> .env
-        echo "LINE_USER_ID=${{ vars.LINE_USER_ID }}" >> .env
+        echo "LINE_USER_ID=${{ secrets.LINE_USER_ID }}" >> .env
         
     - name: Run morning notification
       run: |
