@@ -199,7 +199,7 @@ class MorningNotifier:
         
         # LINE通知送信
         print("📱 LINE通知を送信中...")
-        success = self.line_notifier.send_message(message)
+        success = self.line_notifier.send_message(message, isbroadcast=False)
         
         if success:
             print("✅ 朝のレポートを送信しました")

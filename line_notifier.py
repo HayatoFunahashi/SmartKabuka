@@ -23,18 +23,24 @@ class LineNotifier:
             self.line_bot_api = None
         else:
             self.line_bot_api = LineBotApi(self.token)
-    
-    def send_message(self, message: str) -> bool:
+
+    def send_message(self, message: str, isbroadcast: bool = False) -> bool:
         """LINE Messaging APIでメッセージを送信"""
         if not self.line_bot_api:
             print(f"[LINE通知（テスト）] {message}")
             return False
         
         try:
-            self.line_bot_api.push_message(
-                to=self.user_id,
-                messages=TextSendMessage(text=message)
-            )
+            if isbroadcast:
+                # ブロードキャストメッセージ
+                self.line_bot_api.broadcast(TextSendMessage(text=message))
+                print("LINEブロードキャスト通知送信成功")
+            else:
+                # 個別メッセージ
+                self.line_bot_api.push_message(
+                    to=self.user_id,
+                    messages=TextSendMessage(text=message)
+                )
             print("LINE通知送信成功")
             return True
             
@@ -47,8 +53,9 @@ class LineNotifier:
     
     def test_connection(self) -> bool:
         """LINE Messaging API接続テスト"""
-        test_message = "🔔 SmartKabuka接続テスト"
-        return self.send_message(test_message)
+        unicast_result = self.send_message("unicast test", isbroadcast=False)
+        broadcast_result = self.send_message("broadcast test", isbroadcast=True)
+        return unicast_result or broadcast_result
 
 
 def main():
@@ -62,11 +69,6 @@ def main():
         print("✅ LINE通知が正常に送信されました")
     else:
         print("❌ LINE通知の送信に失敗しました")
-        print("💡 .envファイルのLINE_MESSAGING_API_TOKENを確認してください")
-        print("💡 LINE Messaging APIトークンの取得方法:")
-        print("   1. https://developers.line.biz/ja/ にアクセス")
-        print("   2. 「ログイン」→「コンソール」にアクセスする")
-        print("   3. 通知を送りたい「チャネル」→「MessagingAPI設定」→「トークンを発行」")
 
 
 if __name__ == "__main__":
