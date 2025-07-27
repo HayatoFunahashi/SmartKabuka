@@ -175,6 +175,7 @@ class MorningNotifier:
         jst = pytz.timezone('Asia/Tokyo')
         now = datetime.now(jst).strftime("%Y/%m/%d %H:%M")
         message_lines.append(f"⏰ {now} 更新")
+        message_lines.append(self.line_notifier.get_usage())
         
         return "\n".join(message_lines)
     

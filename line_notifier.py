@@ -51,6 +51,22 @@ class LineNotifier:
             print(f"LINE通知送信エラー: {e}")
             return False
     
+    def get_usage(self) -> str:
+        """LINE Messaging APIのメッセージ利用情報を取得"""
+        
+        try:
+            quota = self.line_bot_api.get_message_quota()
+            consumption = self.line_bot_api.get_message_quota_consumption()
+            message = f"上限:{quota.value} - 使用済み:{consumption.total_usage}"
+            print(message)
+            return message
+        except LineBotApiError as e:
+            print(f"LINE API エラー: {e.status_code} - {e.error.message}")
+            return None
+        except Exception as e:
+            print(f"メッセージ利用情報取得エラー: {e}")
+            return None
+
     def test_connection(self) -> bool:
         """LINE Messaging API接続テスト"""
         unicast_result = self.send_message("unicast test", isbroadcast=False)
@@ -63,6 +79,7 @@ def main():
     notifier = LineNotifier()
     
     print("=== LINE Messaging API接続テスト ===")
+    notifier.get_usage()
     success = notifier.test_connection()
     
     if success:
