@@ -212,7 +212,7 @@ class JPCSVParser:
 
 def main():
     """テスト用のメイン関数"""
-    parser = JPCSVParser('input/data.csv')
+    parser = JPCSVParser('input/jp_data.csv')
     
     # 全セクションを解析
     sections = parser.parse_csv()

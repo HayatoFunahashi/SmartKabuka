@@ -95,7 +95,7 @@ class JPStockData:
 
 def main():
     """テスト用のメイン関数"""
-    stock_data = JPStockData('input/data.csv')
+    stock_data = JPStockData('input/jp_data.csv')
     
     print("=== 保有銘柄コード ===")
     codes = stock_data.get_stock_codes()

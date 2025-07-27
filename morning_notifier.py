@@ -21,7 +21,7 @@ class MorningNotifier:
     
     def _load_portfolio_data(self):
         """ポートフォリオデータを読み込み"""
-        jp_csv_path = 'input/data.csv'
+        jp_csv_path = 'input/jp_data.csv'
         us_csv_path = 'input/us_data.csv'
         
         # 日本株データ
@@ -248,7 +248,7 @@ def main():
         print("📋 チェック項目:")
         print("  - .envファイルのLINE_MESSAGING_API_TOKEN設定")
         print("  - .envファイルのLINE_USER_ID設定")
-        print("  - input/data.csv（日本株）の存在")
+        print("  - input/jp_data.csv（日本株）の存在")
         print("  - input/us_data.csv（米国株）の存在")
         print("  - インターネット接続")
 

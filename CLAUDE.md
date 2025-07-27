@@ -11,7 +11,7 @@ This is a Python-based AI-powered stock alert notification application that anal
 - **Language**: Python 3
 - **Required Libraries**: pandas, requests, beautifulsoup4, yfinance, python-dotenv
 - **Environment Setup**: API keys and authentication info stored in `.env` file
-- **Input Data**: SBI Securities CSV files in `input/data.csv` (SJIS encoded)
+- **Input Data**: SBI Securities CSV files in `input/jp_data.csv` (SJIS encoded)
 
 ## Core Architecture
 

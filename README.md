@@ -14,7 +14,7 @@
 ## アプリの構成
 
 - 保有株情報を取得する機能
- - inputフォルダ内にあるdata.csvを読み込みする
+ - inputフォルダ内にあるjp_data.csv,us_data.csvを読み込みする
 
 - 株価・ニュースをリアルタイムで取得する機能
  - Yahoo Finance APIもしくは楽天証券APIを利用して株価情報を取得する

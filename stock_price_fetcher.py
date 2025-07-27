@@ -167,7 +167,7 @@ def main():
     from libs.us_stock_data import USStockData
     
     # 保有銘柄を取得
-    stock_data = JPStockData('input/data.csv')
+    stock_data = JPStockData('input/jp_data.csv')
     codes = stock_data.get_stock_codes()
     
     print(f"=== 保有銘柄の株価取得テスト ===")
