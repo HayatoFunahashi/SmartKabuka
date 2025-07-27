@@ -17,7 +17,7 @@ SmartKabuka is a Python-based AI-powered portfolio notification system that anal
 ## Current Architecture
 
 ### Core Components
-1. **Morning Notifier** (`morning_notifier.py`): Main execution file, orchestrates portfolio report generation
+1. **Morning Notifier** (`stock_notifier.py`): Main execution file, orchestrates portfolio report generation
 2. **Stock Data Managers**: 
    - `libs/jp_stock_data.py`: Japanese stock portfolio analysis
    - `libs/us_stock_data.py`: US stock portfolio analysis
@@ -39,7 +39,7 @@ SmartKabuka is a Python-based AI-powered portfolio notification system that anal
 
 ```
 SmartKabuka/
-├── morning_notifier.py           # Main application entry point
+├── stock_notifier.py           # Main application entry point
 ├── line_notifier.py             # LINE messaging integration
 ├── stock_price_fetcher.py       # Yahoo Finance API client
 ├── libs/
@@ -60,7 +60,7 @@ SmartKabuka/
 
 ```bash
 # Run morning portfolio report
-python3 morning_notifier.py
+python3 stock_notifier.py
 
 # Test Japanese stock data parsing
 python3 libs/jp_stock_data.py

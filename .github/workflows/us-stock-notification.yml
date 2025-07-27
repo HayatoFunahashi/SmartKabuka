@@ -1,13 +1,13 @@
-name: Morning Portfolio Notification
+name: US Stock Notification (Weekdays 06:00 JST)
 
 on:
   schedule:
-    # 毎日 21:00 UTC (日本時間 6:00) に実行
-    - cron: '0 21 * * *'
+    # 平日 21:00 UTC (日本時間 6:00) に実行
+    - cron: '0 21 * * 0-4'
   workflow_dispatch: # 手動実行も可能
 
 jobs:
-  notify:
+  us-notify:
     runs-on: ubuntu-latest
     
     steps:
@@ -35,15 +35,15 @@ jobs:
         echo "LINE_MESSAGING_API_TOKEN=${{ secrets.LINE_MESSAGING_API_TOKEN }}" >> .env
         echo "LINE_USER_ID=${{ secrets.LINE_USER_ID }}" >> .env
         
-    - name: Run morning notification
+    - name: Run US stock notification
       run: |
-        python morning_notifier.py
+        python stock_notifier.py --market us
         
     - name: Upload logs (on failure)
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: error-logs
+        name: us-error-logs
         path: |
           *.log
           error.txt

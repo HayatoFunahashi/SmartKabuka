@@ -1,0 +1,49 @@
+name: JP Stock Notification (Weekdays 16:00 JST)
+
+on:
+  schedule:
+    # 平日 07:00 UTC (日本時間 16:00) に実行
+    - cron: '0 7 * * 1-5'
+  workflow_dispatch: # 手動実行も可能
+
+jobs:
+  jp-notify:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pandas yfinance python-dotenv line-bot-sdk
+        
+    - name: Create input CSV files and .env file
+      run: |
+        # Create input directory and CSV files from Base64 secrets
+        mkdir -p input
+        echo "${{ secrets.JP_DATA_CSV_BASE64 }}" | base64 -d > input/jp_data.csv
+        echo "${{ secrets.US_DATA_CSV_BASE64 }}" | base64 -d > input/us_data.csv
+        
+        # Create .env file
+        echo "LINE_MESSAGING_API_TOKEN=${{ secrets.LINE_MESSAGING_API_TOKEN }}" >> .env
+        echo "LINE_USER_ID=${{ secrets.LINE_USER_ID }}" >> .env
+        
+    - name: Run JP stock notification
+      run: |
+        python stock_notifier.py --market jp
+        
+    - name: Upload logs (on failure)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: error-logs
+        path: |
+          *.log
+          error.txt

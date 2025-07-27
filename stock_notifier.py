@@ -8,7 +8,7 @@ import yfinance as yf
 import pytz
 
 
-class MorningNotifier:
+class StockNotifier:
     """朝のポートフォリオ通知システム"""
     
     def __init__(self):
@@ -179,6 +179,75 @@ class MorningNotifier:
         
         return "\n".join(message_lines)
     
+    def _create_jp_stock_section(self, jp_data: dict) -> list:
+        """日本株セクションのメッセージを作成"""
+        lines = []
+        lines.append("🇯🇵 日本株")
+        lines.append(f"銘柄数: {jp_data.get('count', 0)}銘柄")
+        
+        for stock in jp_data.get('stocks', []):
+            code = stock.get('code', '')
+            name = stock.get('name', '')
+            current_price = stock.get('current_price', 0)
+            change = stock.get('price_change', 0)
+            change_pct = stock.get('price_change_pct', 0)
+            
+            # 変動の矢印表示
+            arrow = "📈" if change > 0 else "📉" if change < 0 else "➡️"
+            
+            lines.append(f"{arrow} {code} {name}")
+            lines.append(f"   {current_price:.0f}円 ({change:+.0f}円 {change_pct:+.2f}%)")
+        
+        return lines
+    
+    def _create_us_stock_section(self, us_data: dict, exchange_rate: float = None) -> list:
+        """米国株セクションのメッセージを作成"""
+        lines = []
+        lines.append("🇺🇸 米国株")
+        lines.append(f"銘柄数: {us_data.get('count', 0)}銘柄")
+        
+        if exchange_rate:
+            lines.append(f"USD/JPY: {exchange_rate:.2f}")
+        
+        for stock in us_data.get('stocks', []):
+            symbol = stock.get('symbol', '')
+            current_price = stock.get('current_price', 0)
+            change = stock.get('price_change', 0)
+            change_pct = stock.get('price_change_pct', 0)
+            
+            # 変動の矢印表示
+            arrow = "📈" if change > 0 else "📉" if change < 0 else "➡️"
+            
+            lines.append(f"{arrow} {symbol}")
+            lines.append(f"   ${current_price:.2f} (${change:+.2f} {change_pct:+.2f}%)")
+            
+            # 円換算表示（為替レートがある場合）
+            if exchange_rate:
+                jpy_price = current_price * exchange_rate
+                lines.append(f"   ≈{jpy_price:.0f}円")
+        
+        return lines
+    
+    def _add_timestamp_and_usage(self, lines: list) -> list:
+        """タイムスタンプと使用状況を追加"""
+        jst = pytz.timezone('Asia/Tokyo')
+        now = datetime.now(jst).strftime("%Y/%m/%d %H:%M")
+        lines.append(f"\n⏰ {now} 更新")
+        lines.append(self.line_notifier.get_usage())
+        return lines
+    
+    def _send_report(self, message: str, success_msg: str) -> bool:
+        """共通のレポート送信処理"""
+        print("📱 LINE通知を送信中...")
+        success = self.line_notifier.send_message(message, isbroadcast=False)
+        
+        if success:
+            print(f"✅ {success_msg}")
+        else:
+            print("❌ レポート送信に失敗しました")
+        
+        return success
+    
     def send_morning_report(self) -> bool:
         """朝のレポートを送信"""
         print("🌅 朝のポートフォリオレポートを作成中...")
@@ -211,6 +280,47 @@ class MorningNotifier:
         
         return success
     
+    def send_jp_report(self) -> bool:
+        """日本株レポートを送信"""
+        print("🇯🇵 日本株レポートを作成中...")
+        
+        # 日本株データ収集
+        jp_data = self.collect_jp_stock_data()
+        
+        # 通知がない場合
+        if not jp_data:
+            print("❌ 送信する日本株データがありません")
+            return False
+        
+        # メッセージ作成（日本株のみ）
+        message_lines = ["📊 日本株レポート (16:00)", "=" * 30]
+        message_lines.extend(self._create_jp_stock_section(jp_data))
+        self._add_timestamp_and_usage(message_lines)
+        
+        message = "\n".join(message_lines)
+        return self._send_report(message, "日本株レポートを送信しました")
+    
+    def send_us_report(self) -> bool:
+        """米国株レポートを送信"""
+        print("🇺🇸 米国株レポートを作成中...")
+        
+        # 米国株データ収集
+        us_data = self.collect_us_stock_data()
+        exchange_rate = self.get_exchange_rate() if us_data else None
+        
+        # 通知がない場合
+        if not us_data:
+            print("❌ 送信する米国株データがありません")
+            return False
+        
+        # メッセージ作成（米国株のみ）
+        message_lines = ["📊 米国株レポート (06:00)", "=" * 30]
+        message_lines.extend(self._create_us_stock_section(us_data, exchange_rate))
+        self._add_timestamp_and_usage(message_lines)
+        
+        message = "\n".join(message_lines)
+        return self._send_report(message, "米国株レポートを送信しました")
+    
     def schedule_check(self) -> bool:
         """実行時刻チェック（GitHub Actionsの場合は常にTrue）"""
         # GitHub Actionsで実行される場合は時間チェックをスキップ
@@ -231,21 +341,40 @@ class MorningNotifier:
 
 def main():
     """メイン実行関数"""
-    notifier = MorningNotifier()
+    import argparse
+    
+    # コマンドライン引数を解析
+    parser = argparse.ArgumentParser(description='Portfolio notification system')
+    parser.add_argument('--market', choices=['jp', 'us', 'both'], default='both',
+                       help='Market to notify (jp: Japanese stocks, us: US stocks, both: both markets)')
+    args = parser.parse_args()
+    
+    notifier = StockNotifier()
     
     print("=" * 50)
-    print("🔔 SmartKabuka 朝のポートフォリオ通知システム")
+    if args.market == 'jp':
+        print("🇯🇵 SmartKabuka 日本株通知システム")
+    elif args.market == 'us':
+        print("🇺🇸 SmartKabuka 米国株通知システム")
+    else:
+        print("🔔 SmartKabuka ポートフォリオ通知システム")
     print("=" * 50)
     
-    # 時刻チェック
+    # 時刻チェック（GitHub Actionsでは常にTrue）
     if not notifier.schedule_check():
         return
     
-    # レポート送信
-    success = notifier.send_morning_report()
+    # 市場指定に応じてレポート送信
+    if args.market == 'jp':
+        success = notifier.send_jp_report()
+    elif args.market == 'us':
+        success = notifier.send_us_report()
+    else:
+        success = notifier.send_morning_report()
     
     if success:
-        print("\n🎉 朝のレポート送信完了！")
+        market_name = {"jp": "日本株", "us": "米国株", "both": "ポートフォリオ"}[args.market]
+        print(f"\n🎉 {market_name}レポート送信完了！")
     else:
         print("\n💥 レポート送信に問題が発生しました")
         print("📋 チェック項目:")

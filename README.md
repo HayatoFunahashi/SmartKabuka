@@ -46,7 +46,7 @@ python3 update_secrets.py
 ## 🏗️ アーキテクチャ
 
 ### コアコンポーネント
-- `morning_notifier.py`: メイン実行ファイル・ポートフォリオレポート作成
+- `stock_notifier.py`: メイン実行ファイル・ポートフォリオレポート作成
 - `libs/jp_stock_data.py`: 日本株データ管理
 - `libs/us_stock_data.py`: 米国株データ管理
 - `stock_price_fetcher.py`: Yahoo Finance API連携
