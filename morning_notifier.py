@@ -5,6 +5,7 @@ from libs.us_stock_data import USStockData
 from stock_price_fetcher import StockPriceFetcher
 from line_notifier import LineNotifier
 import yfinance as yf
+import pytz
 
 
 class MorningNotifier:
@@ -171,7 +172,8 @@ class MorningNotifier:
             message_lines.append("")
         
         # 送信時刻
-        now = datetime.now().strftime("%Y/%m/%d %H:%M")
+        jst = pytz.timezone('Asia/Tokyo')
+        now = datetime.now(jst).strftime("%Y/%m/%d %H:%M")
         message_lines.append(f"⏰ {now} 更新")
         
         return "\n".join(message_lines)
